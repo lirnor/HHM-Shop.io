@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Магазин в Telegram</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: white;
+        }
+        
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        
+        .product-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .product-image {
+            width: 100%;
+            height: 150px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+        }
+        
+        .product-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .product-description {
+            opacity: 0.9;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+        
+        .product-price {
+            font-size: 20px;
+            font-weight: bold;
+            color: #ffd700;
+            margin-bottom: 15px;
+        }
+        
+        .buy-btn {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a52 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            transition: transform 0.2s;
+        }
+        
+        .buy-btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .cart-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #ff6b6b;
+            color: white;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            cursor: pointer;
+            border: none;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 50px;
+            font-size: 18px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🛍️ Магазин в TG</h1>
+            <p>Покупайте прямо в Telegram!</p>
+        </div>
+        
+        <div id="products">
+            <div class="loading">Загрузка товаров...</div>
+        </div>
+    </div>
+    
+    <button class="cart-btn" onclick="viewCart()">🛒</button>
+
+    <script>
+        // Telegram WebApp инициализация
+        let tg = window.Telegram.WebApp;
+        
+        // Раскрываем на весь экран
+        tg.expand();
+        
+        // Данные товаров (в реальности будут с сервера)
+        const products = [
+            {
+                id: 1,
+                name: "Крутая футболка",
+                description: "Модная футболка из хлопка",
+                price: 1999,
+                image: "https://via.placeholder.com/300x200/667eea/white?text=Футболка"
+            },
+            {
+                id: 2,
+                name: "Стильные кроссовки",
+                description: "Удобные и современные",
+                price: 4999,
+                image: "https://via.placeholder.com/300x200/764ba2/white?text=Кроссовки"
+            },
+            {
+                id: 3,
+                name: "Бейсболка",
+                description: "Защита от солнца в стиле",
+                price: 1499,
+                image: "https://via.placeholder.com/300x200/ff6b6b/white?text=Бейсболка"
+            }
+        ];
+        
+        // Корзина
+        let cart = [];
+        
+        // Показываем товары
+        function showProducts() {
+            const container = document.getElementById('products');
+            container.innerHTML = '';
+            
+            products.forEach(product => {
+                const productCard = document.createElement('div');
+                productCard.className = 'product-card';
+                productCard.innerHTML = `
+                    <div class="product-image">
+                        <img src="${product.image}" alt="${product.name}" 
+                             style="width: 100%; height: 100%; object-fit: cover; border-radius: 10px;">
+                    </div>
+                    <div class="product-title">${product.name}</div>
+                    <div class="product-description">${product.description}</div>
+                    <div class="product-price">${product.price} руб.</div>
+                    <button class="buy-btn" onclick="addToCart(${product.id})">
+                        🛒 Купить
+                    </button>
+                `;
+                container.appendChild(productCard);
+            });
+        }
+        
+        // Добавляем в корзину
+        function addToCart(productId) {
+            const product = products.find(p => p.id === productId);
+            if (product) {
+                cart.push(product);
+                tg.showPopup({
+                    title: "✅ Добавлено в корзину",
+                    message: `${product.name} за ${product.price} руб.`,
+                    buttons: [{type: "ok"}]
+                });
+            }
+        }
+        
+        // Смотрим корзину
+        function viewCart() {
+            if (cart.length === 0) {
+                tg.showPopup({
+                    title: "🛒 Корзина",
+                    message: "Ваша корзина пуста",
+                    buttons: [{type: "ok"}]
+                });
+                return;
+            }
+            
+            let total = cart.reduce((sum, item) => sum + item.price, 0);
+            let message = `Товаров в корзине: ${cart.length}\nОбщая сумма: ${total} руб.\n\n`;
+            
+            cart.forEach((item, index) => {
+                message += `${index + 1}. ${item.name} - ${item.price} руб.\n`;
+            });
+            
+            tg.showPopup({
+                title: "🛒 Ваша корзина",
+                message: message,
+                buttons: [
+                    {type: "default", text: "Оформить заказ", id: "order"},
+                    {type: "cancel", id: "cancel"}
+                ]
+            });
+            
+            // Обработка кнопок в popup
+            tg.onEvent('popupClosed', (data) => {
+                if (data.button_id === 'order') {
+                    placeOrder();
+                }
+            });
+        }
+        
+        // Оформляем заказ
+        function placeOrder() {
+            let total = cart.reduce((sum, item) => sum + item.price, 0);
+            
+            // Отправляем данные в бота
+            const orderData = {
+                type: 'order',
+                items: cart.map(item => ({id: item.id, name: item.name, price: item.price})),
+                total: total,
+                user: tg.initDataUnsafe.user
+            };
+            
+            tg.sendData(JSON.stringify(orderData));
+            
+            tg.showPopup({
+                title: "✅ Заказ оформлен!",
+                message: `Сумма: ${total} руб.\nС вами свяжется администратор.`,
+                buttons: [{type: "ok"}]
+            });
+            
+            cart = [];
+        }
+        
+        // Запускаем при загрузке
+        document.addEventListener('DOMContentLoaded', function() {
+            showProducts();
+            
+            // Показываем кнопку "Открыть в Telegram" если открыто в браузере
+            if (!tg.initData) {
+                document.body.innerHTML = `
+                    <div style="text-align: center; padding: 50px;">
+                        <h1>📱 Откройте в Telegram</h1>
+                        <p>Это приложение работает только внутри Telegram</p>
+                        <p>Перейдите в бота и нажмите кнопку "Магазин"</p>
+                    </div>
+                `;
+            }
+        });
+    </script>
+</body>
+</html>
